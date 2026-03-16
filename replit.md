@@ -2,7 +2,15 @@
 
 ## Overview
 
-pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
+pnpm workspace monorepo using TypeScript. Also includes a Python Streamlit application for PDF processing.
+
+## Streamlit App — Consolidador de Reembolsos (Projeto Sucuriú)
+
+- **Location**: `streamlit-app/app.py`
+- **Purpose**: Upload PDFs of "Demonstrativo de Reembolso de Despesas", extract ID, Empresa Referência, and expense table rows, and generate a consolidated Excel file (`reembolso_consolidado.xlsx`).
+- **Stack**: Python 3.11 + Streamlit + pdfplumber + pandas + xlsxwriter
+- **Port**: 5000 (via `streamlit run streamlit-app/app.py --server.port 5000`)
+- **Workflow**: "Start application"
 
 ## Stack
 
