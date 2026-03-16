@@ -35,8 +35,8 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "streamlit run streamlit-app/app.py --server.port 5000 --server.address 0.0.0.0 --server.headless true"
-waitForPort = 5000
+args = "streamlit run streamlit-app/app.py --server.port 26048 --server.address 0.0.0.0 --server.headless true --server.enableCORS false --server.enableXsrfProtection false"
+waitForPort = 26048
 
 [agent]
 stack = "PNPM_WORKSPACE"

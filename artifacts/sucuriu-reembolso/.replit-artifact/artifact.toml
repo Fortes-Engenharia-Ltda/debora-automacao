@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Consolidador de Reembolsos"
+version = "1.0.0"
+id = "artifacts/sucuriu-reembolso"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+localPort = 26048
+name = "web"
+paths = ["/"]
+
+[services.development]
+run = "pnpm --filter @workspace/sucuriu-reembolso run dev"
+
+[services.env]
+PORT = "26048"
+BASE_PATH = "/"
+
+[services.production]
+build = ["pnpm", "--filter", "@workspace/sucuriu-reembolso", "run", "build"]
+publicDir = "artifacts/sucuriu-reembolso/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
