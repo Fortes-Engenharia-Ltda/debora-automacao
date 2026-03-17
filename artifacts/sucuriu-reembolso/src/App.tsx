@@ -129,9 +129,7 @@ export default function App() {
           <h1 className="text-3xl font-bold text-white tracking-tight">
             Consolidador de Reembolso
           </h1>
-          <p className="text-sm" style={{ color: "#7dd3d8" }}>
-            Projeto Sucuriú — faça upload dos PDFs e baixe a planilha consolidada
-          </p>
+          <p className="text-sm" style={{ color: "#7dd3d8" }}>Faça upload dos PDFs e baixe a planilha consolidada</p>
         </div>
 
         {status === "idle" || status === "error" ? (
@@ -244,7 +242,7 @@ export default function App() {
           </>
         ) : status === "processing" ? (
           /* Processing state */
-          <div className="rounded-2xl p-10 text-center space-y-5 border" style={{ background: "rgba(255,255,255,0.05)", borderColor: "rgba(125,211,216,0.2)" }}>
+          (<div className="rounded-2xl p-10 text-center space-y-5 border" style={{ background: "rgba(255,255,255,0.05)", borderColor: "rgba(125,211,216,0.2)" }}>
             <div className="text-5xl">⚙️</div>
             <div>
               <p className="text-white font-medium text-lg">
@@ -264,10 +262,10 @@ export default function App() {
               />
             </div>
             <p className="text-sm font-mono" style={{ color: "#7dd3d8" }}>{progress}%</p>
-          </div>
+          </div>)
         ) : (
           /* Done state */
-          <div className="space-y-4">
+          (<div className="space-y-4">
             <div className="rounded-2xl p-8 text-center space-y-3 border" style={{ background: "rgba(20,184,166,0.1)", borderColor: "rgba(20,184,166,0.3)" }}>
               <div className="text-5xl">✅</div>
               <p className="text-white font-semibold text-xl">Planilha gerada com sucesso!</p>
@@ -276,7 +274,6 @@ export default function App() {
                 <span>📊 {result?.rows} linhas extraídas</span>
               </div>
             </div>
-
             {downloadUrl && (
               <a
                 href={downloadUrl}
@@ -290,7 +287,6 @@ export default function App() {
                 ⬇️ Baixar reembolso_consolidado.xlsx
               </a>
             )}
-
             {result?.errors && result.errors.length > 0 && (
               <div className="rounded-2xl overflow-hidden border" style={{ background: "rgba(245,158,11,0.08)", borderColor: "rgba(245,158,11,0.25)" }}>
                 <div className="px-4 py-3 border-b" style={{ borderColor: "rgba(245,158,11,0.15)" }}>
@@ -305,7 +301,6 @@ export default function App() {
                 </ul>
               </div>
             )}
-
             <button
               onClick={reset}
               className="w-full font-medium py-3 rounded-2xl text-sm transition-all duration-200 border"
@@ -317,7 +312,7 @@ export default function App() {
             >
               🔄 Processar mais arquivos
             </button>
-          </div>
+          </div>)
         )}
 
         <p className="text-center text-xs pb-4" style={{ color: "rgba(125,211,216,0.4)" }}>
