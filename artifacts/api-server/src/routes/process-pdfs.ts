@@ -31,12 +31,27 @@ router.post("/process-pdfs", upload.array("pdfs", 1000), async (req, res) => {
   const pdfPaths = files.map((f) => f.path);
   const includeZeros = req.body.includeZeros === "true";
 
-  const scriptPath = path.resolve(process.cwd(), "../../streamlit-app/process_pdfs.py");
+  const scriptPath = (() => {
+    let dir = process.cwd();
+    for (let i = 0; i < 8; i++) {
+      const candidate = path.join(dir, "streamlit-app", "process_pdfs.py");
+      if (fs.existsSync(candidate)) return candidate;
+      const parent = path.dirname(dir);
+      if (parent === dir) break;
+      dir = parent;
+    }
+    throw new Error(`process_pdfs.py not found. cwd=${process.cwd()}`);
+  })();
 
   const args = [...pdfPaths, "--output", outputPath];
   if (includeZeros) args.push("--include-zeros");
 
   try {
+    console.log(`[process-pdfs] Script path: ${scriptPath}`);
+    console.log(`[process-pdfs] Script exists: ${fs.existsSync(scriptPath)}`);
+    console.log(`[process-pdfs] Output path: ${outputPath}`);
+    console.log(`[process-pdfs] PDF count: ${pdfPaths.length}`);
+
     const result = await new Promise<{ stdout: string; stderr: string; code: number }>(
       (resolve) => {
         const proc = spawn("python3", [scriptPath, ...args]);
@@ -44,7 +59,12 @@ router.post("/process-pdfs", upload.array("pdfs", 1000), async (req, res) => {
         let stderr = "";
         proc.stdout.on("data", (d) => (stdout += d.toString()));
         proc.stderr.on("data", (d) => (stderr += d.toString()));
-        proc.on("close", (code) => resolve({ stdout, stderr, code: code ?? 1 }));
+        proc.on("close", (code) => {
+          console.log(`[process-pdfs] Exit code: ${code}`);
+          console.log(`[process-pdfs] stdout: ${stdout.substring(0, 500)}`);
+          console.log(`[process-pdfs] stderr: ${stderr.substring(0, 500)}`);
+          resolve({ stdout, stderr, code: code ?? 1 });
+        });
       }
     );
 
