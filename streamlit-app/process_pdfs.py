@@ -45,14 +45,44 @@ def extrair_dados_pdf(pdf_path: str):
             if match_id:
                 id_valor = match_id.group(1).strip()
 
-            # --- Empresa Referência ---
-            empresa = None
-            match_emp = re.search(
-                r'Empresa\s+Referência\s*[:\-]?\s*(.+?)(?:\n|Ped\.|$)',
-                texto_completo, re.IGNORECASE
+            def extrair_campo(padrao, texto, flags=re.IGNORECASE):
+                m = re.search(padrao, texto, flags)
+                return m.group(1).strip() if m else ""
+
+            # --- Empresa Principal ---
+            empresa_principal = extrair_campo(
+                r'Empresa\s+Principal\s*[:\-]?\s*(.+?)(?:\n|$)', texto_completo
             )
-            if match_emp:
-                empresa = match_emp.group(1).strip()
+
+            # --- Empresa Referência ---
+            empresa = extrair_campo(
+                r'Empresa\s+Referência\s*[:\-]?\s*(.+?)(?:\n|Ped\.|$)', texto_completo
+            ) or None
+
+            # --- Ped. de Compra ---
+            ped_compra = extrair_campo(
+                r'Ped\.?\s*de\s*Compra\s*[:\-]?\s*(.+?)(?:\n|$)', texto_completo
+            )
+
+            # --- Área ---
+            area = extrair_campo(
+                r'(?<!\w)Área\s*[:\-]?\s*(.+?)(?:\n|$)', texto_completo
+            )
+
+            # --- Descrição Área ---
+            descricao_area = extrair_campo(
+                r'Descrição\s+Área\s*[:\-]?\s*(.+?)(?:\n|$)', texto_completo
+            )
+
+            # --- Período ---
+            periodo = extrair_campo(
+                r'Período\s*[:\-]?\s*(.+?)(?:\n|$)', texto_completo
+            )
+
+            # --- Adm. Resp. ---
+            adm_resp = extrair_campo(
+                r'Adm\.?\s*Resp\.?\s*[:\-]?\s*(.+?)(?:\n|$)', texto_completo
+            )
 
             nome_arquivo = Path(pdf_path).name
             if not id_valor or not empresa:
@@ -124,7 +154,13 @@ def extrair_dados_pdf(pdf_path: str):
 
                     linhas.append({
                         "ID": id_valor or "",
+                        "Empresa Principal": empresa_principal,
                         "Empresa Referência": empresa or "",
+                        "Ped. de Compra": ped_compra,
+                        "Área": area,
+                        "Descrição Área": descricao_area,
+                        "Período": periodo,
+                        "Adm. Resp.": adm_resp,
                         "Tipo Despesa": tipo_str,
                         "Qtd": qtd,
                         "Valor Total": valor,
@@ -155,7 +191,19 @@ def gerar_excel(df: pd.DataFrame, output_path: str):
             "border": 1, "align": "center", "valign": "vcenter", "num_format": "#,##0",
         })
 
-        col_widths = {"ID": 10, "Empresa Referência": 30, "Tipo Despesa": 45, "Qtd": 10, "Valor Total": 18}
+        col_widths = {
+            "ID": 8,
+            "Empresa Principal": 28,
+            "Empresa Referência": 25,
+            "Ped. de Compra": 16,
+            "Área": 8,
+            "Descrição Área": 30,
+            "Período": 10,
+            "Adm. Resp.": 25,
+            "Tipo Despesa": 42,
+            "Qtd": 8,
+            "Valor Total": 16,
+        }
         colunas = list(df.columns)
 
         for col_idx, col_nome in enumerate(colunas):
@@ -200,12 +248,17 @@ def main():
         }))
         sys.exit(1)
 
-    df = pd.DataFrame(todos_dados, columns=["ID", "Empresa Referência", "Tipo Despesa", "Qtd", "Valor Total"])
+    COLUNAS = [
+        "ID", "Empresa Principal", "Empresa Referência", "Ped. de Compra",
+        "Área", "Descrição Área", "Período", "Adm. Resp.",
+        "Tipo Despesa", "Qtd", "Valor Total",
+    ]
+    df = pd.DataFrame(todos_dados, columns=COLUNAS)
 
     if not args.include_zeros:
         df = df[~((df["Qtd"] == 0) & (df["Valor Total"] == 0))]
 
-    df = df.sort_values(["ID", "Empresa Referência", "Tipo Despesa"]).reset_index(drop=True)
+    df = df.sort_values(["ID", "Empresa Principal", "Empresa Referência", "Tipo Despesa"]).reset_index(drop=True)
 
     gerar_excel(df, args.output)
 
