@@ -313,9 +313,7 @@ export default function App() {
           </div>)
         )}
 
-        <p className="text-center text-xs pb-4" style={{ color: "rgba(125,211,216,0.4)" }}>
-          Projeto Sucuriú · Consolidador de Reembolso de Despesas
-        </p>
+        <p className="text-center text-xs pb-4" style={{ color: "rgba(125,211,216,0.4)" }}>Fortes Engenharia - InovaFortes</p>
       </div>
     </div>
   );
