@@ -126,9 +126,7 @@ export default function App() {
             style={{ background: "linear-gradient(135deg, #0ea5e9, #14b8a6)" }}>
             <span className="text-2xl">📄</span>
           </div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">
-            Consolidador de Reembolso
-          </h1>
+          <h1 className="text-3xl font-bold text-white tracking-tight">Planilha de Capital Humano</h1>
           <p className="text-sm" style={{ color: "#7dd3d8" }}>Faça upload dos PDFs e baixe a planilha consolidada</p>
         </div>
 
