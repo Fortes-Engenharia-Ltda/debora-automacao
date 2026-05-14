@@ -1,6 +1,4 @@
 import streamlit as st
-import pdfplumber
-import pandas as pd
 import re
 import io
 import os
@@ -20,6 +18,7 @@ st.divider()
 
 
 def extrair_dados_pdf(pdf_bytes, nome_arquivo):
+    import pdfplumber
     """
     Extrai ID, Empresa Referência e tabela de despesas de um PDF de reembolso.
     Retorna lista de dicts com as linhas extraídas.
@@ -169,6 +168,7 @@ def extrair_dados_pdf(pdf_bytes, nome_arquivo):
 
 def gerar_excel(df):
     """Gera o arquivo Excel em memória e retorna os bytes."""
+    import pandas as pd
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
         df.to_excel(writer, index=False, sheet_name="Reembolsos")
