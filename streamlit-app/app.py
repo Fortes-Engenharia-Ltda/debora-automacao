@@ -22,153 +22,7 @@ st.markdown("**Projeto Sucuriú** — Faça upload dos PDFs e baixe a planilha c
 st.divider()
 
 
-def extrair_dados_pdf(pdf_bytes, nome_arquivo):
-    import pdfplumber
-    """
-    Extrai ID, Empresa Referência e tabela de despesas de um PDF de reembolso.
-    Retorna lista de dicts com as linhas extraídas.
-    """
-    linhas = []
-    erros = []
-
-    try:
-        with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
-            texto_completo = ""
-            todas_tabelas = []
-
-            for pagina in pdf.pages:
-                texto_completo += pagina.extract_text() or ""
-                tabelas = pagina.extract_tables()
-                if tabelas:
-                    todas_tabelas.extend(tabelas)
-
-            # --- Extração do ID ---
-            id_valor = None
-            # Padrão: "ID   4310" ou "ID\n4310"
-            match_id = re.search(r'\bID\b[\s\t]+(\d+)', texto_completo)
-            if not match_id:
-                # Tenta variação com quebra de linha
-                match_id = re.search(r'\bID\b\s*\n\s*(\d+)', texto_completo)
-            if match_id:
-                id_valor = match_id.group(1).strip()
-
-            # --- Extração da Empresa Referência ---
-            empresa = None
-            match_emp = re.search(
-                r'Empresa\s+Referência\s*[:\-]?\s*(.+?)(?:\n|Ped\.|$)',
-                texto_completo, re.IGNORECASE
-            )
-            if match_emp:
-                empresa = match_emp.group(1).strip()
-
-            if not id_valor or not empresa:
-                erros.append(
-                    f"⚠️ {nome_arquivo}: Não foi possível extrair ID ({id_valor}) "
-                    f"ou Empresa ({empresa}). Verifique o formato do PDF."
-                )
-
-            # --- Extração da tabela de despesas ---
-            # Procura tabela com colunas "Tipo Despesa", "Qtd", "Valor Total"
-            tabela_encontrada = False
-
-            for tabela in todas_tabelas:
-                if not tabela:
-                    continue
-
-                # Identifica linha de cabeçalho
-                cabecalho_idx = None
-                for i, linha in enumerate(tabela):
-                    linha_texto = " ".join(str(c).lower() for c in linha if c)
-                    if "tipo despesa" in linha_texto and "qtd" in linha_texto:
-                        cabecalho_idx = i
-                        break
-
-                if cabecalho_idx is None:
-                    continue
-
-                cabecalho = tabela[cabecalho_idx]
-
-                # Identifica índices das colunas de interesse
-                col_tipo = None
-                col_qtd = None
-                col_valor = None
-
-                for j, col in enumerate(cabecalho):
-                    col_norm = str(col).lower().strip() if col else ""
-                    if "tipo" in col_norm and "despesa" in col_norm:
-                        col_tipo = j
-                    elif col_norm in ("qtd", "quantidade", "qtde"):
-                        col_qtd = j
-                    elif "valor" in col_norm and "total" in col_norm:
-                        col_valor = j
-
-                # Fallback: assume posições fixas se colunas não identificadas
-                if col_tipo is None:
-                    col_tipo = 0
-                if col_qtd is None:
-                    col_qtd = 1
-                if col_valor is None:
-                    col_valor = 2
-
-                tabela_encontrada = True
-
-                for linha in tabela[cabecalho_idx + 1:]:
-                    if not linha or all(c is None or str(c).strip() == "" for c in linha):
-                        continue
-
-                    tipo = linha[col_tipo] if col_tipo < len(linha) else None
-                    qtd_raw = linha[col_qtd] if col_qtd < len(linha) else None
-                    valor_raw = linha[col_valor] if col_valor < len(linha) else None
-
-                    if not tipo or str(tipo).strip() == "":
-                        continue
-
-                    tipo_str = str(tipo).strip()
-
-                    # Ignora linhas de total
-                    if re.search(r'total\s+desconto', tipo_str, re.IGNORECASE):
-                        continue
-
-                    # Limpa quantidade
-                    qtd_str = str(qtd_raw).strip() if qtd_raw else "0"
-                    qtd_str = re.sub(r'[^\d.,]', '', qtd_str).replace('.', '').replace(',', '.')
-                    try:
-                        qtd = float(qtd_str) if qtd_str else 0.0
-                    except ValueError:
-                        qtd = 0.0
-
-                    # Limpa valor
-                    valor_str = str(valor_raw).strip() if valor_raw else "0"
-                    # Remove "R$" e todos os espaços (PDFs frequentemente inserem espaços nos números)
-                    valor_str = re.sub(r'R\$\s*', '', valor_str)
-                    valor_str = valor_str.replace(' ', '').strip()
-                    if valor_str in ('-', '', 'None'):
-                        valor_str = "0"
-                    # Formato brasileiro: 1.311,03 → 1311.03
-                    valor_str = valor_str.replace('.', '').replace(',', '.')
-                    valor_str = re.sub(r'[^\d.]', '', valor_str)
-                    try:
-                        valor = float(valor_str) if valor_str else 0.0
-                    except ValueError:
-                        valor = 0.0
-
-                    linhas.append({
-                        "ID": id_valor or "",
-                        "Empresa Referência": empresa or "",
-                        "Tipo Despesa": tipo_str,
-                        "Qtd": qtd,
-                        "Valor Total": valor,
-                    })
-
-            if not tabela_encontrada:
-                erros.append(
-                    f"⚠️ {nome_arquivo}: Tabela de despesas não encontrada no PDF."
-                )
-
-    except Exception as e:
-        erros.append(f"❌ {nome_arquivo}: Erro ao processar — {str(e)}\n{traceback.format_exc()}")
-
-    return linhas, erros
+from extractor import extrair_dados_pdf_bytes, COLUNAS
 
 
 def gerar_excel(df):
@@ -280,16 +134,14 @@ if arquivos:
                 text=f"Processando {i+1}/{len(arquivos)}: {arquivo.name}"
             )
             pdf_bytes = arquivo.read()
-            linhas, erros = extrair_dados_pdf(pdf_bytes, arquivo.name)
+            linhas, erros = extrair_dados_pdf_bytes(pdf_bytes, arquivo.name)
             todos_dados.extend(linhas)
             todos_erros.extend(erros)
 
         barra.progress(1.0, text="✅ Processamento concluído!")
 
         if todos_dados:
-            df = pd.DataFrame(todos_dados, columns=[
-                "ID", "Empresa Referência", "Tipo Despesa", "Qtd", "Valor Total"
-            ])
+            df = pd.DataFrame(todos_dados, columns=COLUNAS)
 
             if not incluir_zeros:
                 df = df[~((df["Qtd"] == 0) & (df["Valor Total"] == 0))]
