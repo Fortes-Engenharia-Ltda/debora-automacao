@@ -267,6 +267,7 @@ st.divider()
 
 if arquivos:
     if st.button("🚀 Processar e Gerar Planilha", type="primary", use_container_width=True):
+        import pandas as pd
         todos_dados = []
         todos_erros = []
 
