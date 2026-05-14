@@ -1,4 +1,9 @@
 import streamlit as st
+import time
+import sys
+
+# Startup logs to help remote health checks / deployment debugging
+print(f"APP_START {time.strftime('%Y-%m-%d %H:%M:%S')}", flush=True)
 import re
 import io
 import os
